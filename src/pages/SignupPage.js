@@ -4,7 +4,7 @@ import "../styles/login.css";
 import CustomInput from "../components/custom/CustomInput";
 
 import Modal from "react-bootstrap/Modal";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form } from "formik";
 import * as Yup from "yup"; 
 
 import GoogleReview from "../assets/icons/googleReview.svg";
