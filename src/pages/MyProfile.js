@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import OnboardHeader from "../components/OnboardHeader";
 
 import Man from "../assets/icons/mandefalut.png";
@@ -9,22 +9,37 @@ import { Button } from "react-bootstrap";
 import { FaInfoCircle } from "react-icons/fa";
 import Modal from "react-bootstrap/Modal";
 import LogoutModalImg from "../assets/icons/logoutModal.png";
-import { useDispatch } from "react-redux";
-import { deleteUser } from "../store/slices/userSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { deleteUser, getUser, updateUser } from "../store/slices/userSlice";
 
 const MyProfile = () => {
-  const [selectedProfile, setSelectedProfile] = useState(null);
-  const [birthdayInput, setBirthdayInput] = useState(false);
-  const [firstNameInput, setFirstNameInput] = useState(false);
-  const [surNameInput, setSurNameInput] = useState(false);
-  const [emailInput, setEmailInput] = useState(false);
-  const [selectAvatar, setSelectAvator] = useState("male");
+  const dispatch = useDispatch();
+  const { userData } = useSelector((state) => state.user);
+
+  const [selectedProfile, setSelectedProfile] = useState(userData?.profile_pic || null);
+  const [birthdayInput, setBirthdayInput] = useState(userData?.date_of_birth ? true : false);
+  const [firstNameInput, setFirstNameInput] = useState(userData?.first_name ? true : false);
+  const [surNameInput, setSurNameInput] = useState(userData?.last_name ? true : false);
+  const [emailInput, setEmailInput] = useState(userData?.email ? true : false);
+  const [selectAvatar, setSelectAvator] = useState(userData?.profile_pic || 0);
   const [informationPopup, setInformationPopup] = useState(false);
   const [showdeletePopup, setShowDeletePopup] = useState(false);
-  const [showLogout, setShowLogout] = useState(false);
 
-  const dispatch = useDispatch();
-  const user_id = localStorage.getItem("nfc-app")?.user_id;
+  const [showLogout, setShowLogout] = useState(false);
+  const [updateData, setUpdateData] = useState({
+    date_of_birth: null,
+    first_name: userData?.first_name,
+    last_name: userData?.last_name,
+    email: userData?.email,
+    gender: userData?.gender
+  });
+  const {user_id} = JSON.parse(localStorage.getItem("nfc-app"));
+
+  useEffect(() => {
+    if(user_id) {
+      dispatch(getUser({"id" : user_id}));
+    }
+  },[ user_id])
 
   const handleProfileSelect = (profile) => {
     setSelectedProfile(profile);
@@ -34,6 +49,11 @@ const MyProfile = () => {
     setShowDeletePopup(false); 
     dispatch(deleteUser({user_id : user_id}));
   };
+
+  const handleSubmit = () => {
+    dispatch(updateUser({...updateData, id: user_id}));
+    console.log(updateData)
+  }
 
   return (
     <>
@@ -53,108 +73,31 @@ const MyProfile = () => {
         >
           Profile Picture
         </label>
-        {/* <div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
-          {[
-            {
-              id: "male",
-              label: "Male",
-              image: Man,
-            },
-            {
-              id: "female",
-              label: "Female",
-              image: Girl,
-            },
-            {
-              id: "transgender",
-              label: "Transgender",
-              image: Other,
-            },
-          ].map((profile) => (
-            <div key={profile.id} style={{ textAlign: "center" }}>
-              <img
-                src={profile.image}
-                alt={profile.label}
-                style={{
-                  border:
-                    selectedProfile === profile.id
-                      ? "3px solid green"
-                      : "1px solid #ccc",
-                  borderRadius: "8px",
-                  width: "100px",
-                  height: "100px",
-                  objectFit: "cover",
-                }}
-              />
-              <button
-                onClick={() => {
-                  handleProfileSelect(profile.id);
-                  setSelectAvator(profile.id);
-                }}
-                style={{
-                  marginTop: "10px",
-                  padding: "5px 10px",
-                  backgroundColor:
-                    selectedProfile === profile.id ? "#2A0181" : "#DB00FF",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "20px",
-                  cursor: "pointer",
-                }}
-              >
-                {selectedProfile === profile.id ? "Selected" : "Select"}
-              </button>
-            </div>
-          ))}
-        </div> */}
+        
         <div style={{ display: "flex", gap: "20px", marginBottom: "20px" }}>
           {[
-            {
-              id: "male",
-              label: "Male",
-              image: Man,
-            },
-            {
-              id: "female",
-              label: "Female",
-              image: Girl,
-            },
-            {
-              id: "transgender",
-              label: "Transgender",
-              image: Other,
-            },
+            { id: "0", label: "Male", image: Man, },
+            { id: "1", label: "Female", image: Girl, },
+            { id: "2", label: "Transgender", image: Other, },
           ].map((profile) => (
-            <div
-              key={profile.id}
-              style={{ textAlign: "center", width: "100%" }}
-            >
-              <img
-                src={profile.image}
-                alt={profile.label}
+            <div key={profile.id} style={{ textAlign: "center", width: "100%" }} >
+              <img src={profile.image} alt={profile.label} 
                 style={{
-                  border:
-                    selectedProfile === profile.id
-                      ? "3px solid green"
-                      : "1px solid #ccc",
+                  border: selectedProfile == profile.id ? "3px solid green" : "1px solid #ccc",
                   borderRadius: "50px",
                   width: "100px",
                   height: "100px",
                   objectFit: "cover",
-                }}
-              />
-              <button
-                onClick={() => {
+                }} />
+              <button onClick={() => {
                   handleProfileSelect(profile.id);
                   setSelectAvator(profile.id);
+                  dispatch(updateUser({profile_pic : profile.id, id: user_id}));
                 }}
                 style={{
                   marginTop: "10px",
                   padding: "5px 10px",
-                  backgroundColor:
-                    profile.id === "transgender"
-                      ? "#000000" // Black background for transgender
-                      : selectedProfile === profile.id
+                  backgroundColor: profile.id == "3" ? "#000000" : selectedProfile == profile.id
                       ? "#2A0181" // Purple for selected profile
                       : "#DB00FF", // Default color for other profiles
                   color: "white",
@@ -162,78 +105,58 @@ const MyProfile = () => {
                   borderRadius: "20px",
                   cursor: "pointer",
                   width: "100%",
-                }}
-              >
-                {selectedProfile === profile.id ? "Selected" : "Select"}
+                }} >
+                {selectedProfile == profile.id ? "Selected" : "Select"}
               </button>
             </div>
           ))}
         </div>
-        <label
-          style={{
-            display: "block",
-            marginBottom: "10px",
-            color: "#000000",
-            fontWeight: "bold",
-            fontSize: 20,
-          }}
-        >
+        <label style={{ display: "block", marginBottom: "10px", color: "#000000", fontWeight: "bold", fontSize: 20}} >
           Personal Information:
         </label>
+
         <div style={{ marginBottom: "20px" }}>
           <p>
-            <span style={{ color: "#000000", fontWeight: "500" }}>
-              Personal ID
-            </span>
-            <span style={{ display: "inline-block", marginLeft: "60px" }}>
-              1980
-            </span>
+            <span style={{ color: "#000000", fontWeight: "500" }}> Personal ID </span>
+            <span style={{ display: "inline-block", marginLeft: "60px" }}> {userData?.user_id ?? "Not Available"} </span>
           </p>
+
+          <p> 
+            <span style={{ color: "#000000", fontWeight: "500" }}> NickName </span>
+            <span style={{ display: "inline-block", marginLeft: "70px"}}> {userData?.user_name ?? "Not Available"} </span>
+          </p>
+
           <p>
-            <span style={{ color: "#000000", fontWeight: "500" }}>
-              NickName
-            </span>
-            <span style={{ display: "inline-block", marginLeft: "70px" }}>
-              Martin James
-            </span>
+            <span style={{ color: "#000000", fontWeight: "500" }}> Phone No </span>
+            <span style={{ display: "inline-block", marginLeft: "70px" }}> {userData?.phone_number ?? "Not Available"} </span>
           </p>
-          <p>
-            <span style={{ color: "#000000", fontWeight: "500" }}>
-              Phone No
-            </span>
-            <span style={{ display: "inline-block", marginLeft: "70px" }}>
-              +1253272834
-            </span>
-          </p>
+
         </div>
 
         <div style={{ marginBottom: "20px" }}>
-          <label
-            style={{
-              width: "40%",
-              color: "#000000",
-
-              fontWeight: "500",
-            }}
-          >
+          <label style={{ width: "40%", color: "#000000", fontWeight: "500"}} >
             Birthday
           </label>
+
           {birthdayInput ? (
             <input
-              type="text"
-              placeholder="Add"
-              style={{
-                display: "block",
-                marginTop: "10px",
-                padding: "5px",
-                border: "none", // Removes the default border
-                borderBottom: "2px solid #000", // Adds only the bottom border
-                outline: "none", // Removes the focus outline
-              }}
-            />
+            type="date"
+            placeholder={userData?.date_of_birth ? userData.date_of_birth : "Add"}
+            disabled={!!userData?.date_of_birth} 
+            value={userData?.date_of_birth || updateData?.date_of_birth || ""}
+            onChange={(e) => setUpdateData({ ...updateData, date_of_birth: e.target.value })}
+            style={{
+              display: "block",
+              marginTop: "10px",
+              padding: "5px",
+              border: "none",
+              borderBottom: "2px solid #000",
+              outline: "none",
+            }}
+          />
+          
           ) : (
-            <button
-              onClick={() => setBirthdayInput(true)}
+            <button onClick={() => setBirthdayInput(true)}
               style={{
                 marginLeft: "10px",
                 padding: "5px 10px",
@@ -242,8 +165,7 @@ const MyProfile = () => {
                 borderRadius: 30,
                 width: "30%",
                 height: 40,
-              }}
-            >
+              }} >
               ADD
             </button>
           )}
@@ -254,9 +176,7 @@ const MyProfile = () => {
             First Name
           </label>
           {firstNameInput ? (
-            <input
-              type="text"
-              placeholder="Add"
+            <input type="text" placeholder={userData?.first_name ?? "Add"} onChange={(e) => setUpdateData({ ...updateData, first_name: e.target.value })}
               style={{
                 display: "block",
                 marginTop: "10px",
@@ -264,11 +184,9 @@ const MyProfile = () => {
                 border: "none", // Removes the default border
                 borderBottom: "2px solid #000", // Adds only the bottom border
                 outline: "none", // Removes the focus outline
-              }}
-            />
+              }} />
           ) : (
-            <button
-              onClick={() => setFirstNameInput(true)}
+            <button onClick={() => setFirstNameInput(true)}
               style={{
                 marginLeft: "10px",
                 padding: "5px 10px",
@@ -277,8 +195,7 @@ const MyProfile = () => {
                 borderRadius: 30,
                 width: "30%",
                 height: 40,
-              }}
-            >
+              }} >
               ADD
             </button>
           )}
@@ -289,9 +206,7 @@ const MyProfile = () => {
             Surname
           </label>
           {surNameInput ? (
-            <input
-              type="text"
-              placeholder="Add"
+            <input type="text" placeholder={userData?.last_name ?? "Add"}  onChange={(e) => setUpdateData({ ...updateData, last_name: e.target.value })}
               style={{
                 display: "block",
                 marginTop: "10px",
@@ -299,11 +214,9 @@ const MyProfile = () => {
                 border: "none", // Removes the default border
                 borderBottom: "2px solid #000", // Adds only the bottom border
                 outline: "none", // Removes the focus outline
-              }}
-            />
+              }} />
           ) : (
-            <button
-              onClick={() => setSurNameInput(true)}
+            <button onClick={() => setSurNameInput(true)}
               style={{
                 marginLeft: "10px",
                 padding: "5px 10px",
@@ -312,8 +225,7 @@ const MyProfile = () => {
                 borderRadius: 30,
                 width: "30%",
                 height: 40,
-              }}
-            >
+              }} >
               ADD
             </button>
           )}
@@ -324,9 +236,7 @@ const MyProfile = () => {
             Email
           </label>
           {emailInput ? (
-            <input
-              type="email"
-              placeholder="Add"
+            <input type="email" placeholder={userData?.email ?? "Add"}  onChange={(e) => setUpdateData({ ...updateData, email: e.target.value })}
               style={{
                 display: "block",
                 marginTop: "10px",
@@ -337,9 +247,7 @@ const MyProfile = () => {
               }}
             />
           ) : (
-            <button
-              onClick={() => setEmailInput(true)}
-              style={{
+            <button onClick={() => setEmailInput(true)} style={{
                 marginLeft: "10px",
                 padding: "5px 10px",
                 backgroundColor: "#2A0181",
@@ -347,8 +255,7 @@ const MyProfile = () => {
                 borderRadius: 30,
                 width: "30%",
                 height: 40,
-              }}
-            >
+              }} >
               Add
             </button>
           )}
@@ -358,65 +265,83 @@ const MyProfile = () => {
           <label style={{ color: "#000000", fontWeight: "500" }}>Sex</label>
           <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
             <label style={{ color: "#000000", fontWeight: "500" }}>
-              <input type="radio" name="sex" value="male" /> Male
+              <input 
+                type="radio" 
+                name="gender" 
+                value="male"  
+                onChange={(e) => setUpdateData({ ...updateData, gender: 0 })}
+                checked={updateData.gender === 0 || updateData.gender === "0"}
+              /> Male
             </label>
             <label style={{ color: "#000000", fontWeight: "500" }}>
-              <input type="radio" name="sex" value="female" /> Female
+              <input 
+                type="radio" 
+                name="gender" 
+                value="female"  
+                onChange={(e) => setUpdateData({ ...updateData, gender: 1 })}
+                checked={updateData.gender === 1 || updateData.gender === "1"}
+              /> Female
             </label>
             <label style={{ color: "#000000", fontWeight: "500" }}>
-              <input type="radio" name="sex" value="other" /> Other
+              <input 
+                type="radio" 
+                name="gender" 
+                value="other"  
+                onChange={(e) => setUpdateData({ ...updateData, gender: 2 })}
+                checked={updateData.gender === 2 || updateData.gender === "2"}
+              /> Other
             </label>
           </div>
         </div>
 
-        <CustomButton
-          text="SAVE"
-          style={{ width: "140px" }}
-          onClick={() => {}}
-          fullWidth={"40%"}
-        />
-        <div style={{ marginTop: 30 }}>
-          <hr />
+        {/* <div style={{ marginBottom: "20px" }}>
+          <label style={{ color: "#000000", fontWeight: "500" }}>Sex</label>
+          <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+            <label style={{ color: "#000000", fontWeight: "500" }}>
+              <input 
+                type="radio" 
+                name="sex" 
+                value="male" 
+                checked={updateData.gender === "male"} 
+                onChange={(e) => setUpdateData({ ...updateData, gender: e.target.value })}
+              /> Male
+            </label>
+            <label style={{ color: "#000000", fontWeight: "500" }}>
+              <input 
+                type="radio" 
+                name="sex" 
+                value="female" 
+                checked={updateData.gender === "female"} 
+                onChange={(e) => setUpdateData({ ...updateData, gender: e.target.value })}
+              /> Female
+            </label>
+            <label style={{ color: "#000000", fontWeight: "500" }}>
+              <input 
+                type="radio" 
+                name="sex" 
+                value="other" 
+                checked={updateData.gender === "other"} 
+                onChange={(e) => setUpdateData({ ...updateData, gender: e.target.value })}
+              /> Other
+            </label>
+          </div>
+        </div> */}
+
+        <CustomButton text="SAVE" style={{ width: "140px" }} onClick={handleSubmit} fullWidth={"40%"} />
+
+        <div style={{ marginTop: 30 }}> <hr /> </div>
+
+        <div style={{ position: "relative", display: "flex", justifyContent: "center", gap: "15px", alignItems: "center", fontWeight: "700", marginTop: 30, }}> Delete account: <Button style={{ backgroundColor: "#2A0181", border: "rgb(42, 1, 129)" }} onClick={() => {
+          setShowDeletePopup(!showdeletePopup);
+          }}> DELETE </Button>
+
+          <FaInfoCircle size={18} style={{ position: "absolute", right: "0", top: "-10px" }}
+          onClick={() => setInformationPopup(!informationPopup)} color="#2A0181" />
         </div>
 
-        <div
-          style={{
-            position: "relative",
-            display: "flex",
-            justifyContent: "center",
-            gap: "15px",
-            alignItems: "center",
-            fontWeight: "700",
-            marginTop: 30,
-          }}
-        >
-          Delete account:
-          <Button
-            style={{ backgroundColor: "#2A0181", border: "rgb(42, 1, 129)" }}
-            onClick={() => {
-              setShowDeletePopup(!showdeletePopup);
-            }}
-          >
-            DELETE
-          </Button>
-          <FaInfoCircle
-            size={18}
-            style={{ position: "absolute", right: "0", top: "-10px" }}
-            onClick={() => setInformationPopup(!informationPopup)}
-            color="#2A0181"
-          />
-        </div>
+        <InformationPopup show={informationPopup} onHide={() => setInformationPopup(false)} />
 
-        <InformationPopup
-          show={informationPopup}
-          onHide={() => setInformationPopup(false)}
-        />
-
-        <DeletePopup
-          show={showdeletePopup}
-          onHide={() => setShowDeletePopup(false)}
-          onDeleteConfirm={handleDeleteConfirm}
-        />
+        <DeletePopup show={showdeletePopup} onHide={() => setShowDeletePopup(false)} onDeleteConfirm= {handleDeleteConfirm} />
 
         <LogoutPopup show={showLogout} onHide={() => setShowLogout(false)} />
       </div>

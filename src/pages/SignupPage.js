@@ -18,6 +18,7 @@ import { Button } from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { signUp } from "../store/slices/userSlice";
 import { useNavigate } from "react-router-dom";
+import { IoIosCloseCircle } from "react-icons/io";
 
 const SignupPage = () => {
   const dispatch = useDispatch();
@@ -31,6 +32,7 @@ const SignupPage = () => {
   const [isModalOpen11,setIsModalOpen11 ] = useState(false);
   const [selectedPhoneNumber, setSelectedPhoneNumber] = useState(false);
   const [addToShort, setToShortCut] = useState(false);
+  const [alreadyRegistered, setAlreadyRegistered] = useState(false);
 
   // Use Formik for form handling
 
@@ -80,7 +82,7 @@ const SignupPage = () => {
 
   const handleSubmit = async (values) => {
     setSelectedPhoneNumber(values?.phone_number)
-    if (!values.special_offer || !values.terms_agree) {
+    if (!values.special_offer || !values.terms_agree || !values.is_adult) {
       setIsModalOpen11(true);
       return;
     }
@@ -89,6 +91,11 @@ const SignupPage = () => {
 
       if (result.meta?.requestStatus === 'fulfilled') {
         setIsModalOpen(true);
+      }
+      if (result.meta?.requestStatus === 'rejected') {
+        setAlreadyRegistered(true)
+      } else {
+        setAlreadyRegistered(false)
       }
     } catch (error) {
       console.error("Error during sign-up:", error);
@@ -166,12 +173,7 @@ const SignupPage = () => {
               />
               <span>I am 13 or older.</span>
             </label>
-            {errors.is_adult && touched.is_adult && (
-              <p style={{ color: "red", fontSize: "14px", marginTop: "5px", fontWeight: "500", marginLeft: "10px" }}>
-                {errors.is_adult}
-              </p>
-            )}
-
+            
             <label style={{ display: "flex", alignItems: "start", fontSize: "16px", gap: "10px", color: "black", fontWeight: "500" }}>
               <input
                 type="checkbox"
@@ -240,8 +242,77 @@ const SignupPage = () => {
       <SocialMediaAbout signup={true} />
       <Verification isModalOpen={isModalOpen} phone={selectedPhoneNumber} setIsModalOpen={setIsModalOpen} />
       <AddShortCut isModalOpen={addToShort} setIsModalOpen={setToShortCut} handleInstallClick={handleInstallClick} showInstallButton={showInstallButton} />
+
+      <AlreadyRegistered isModalOpen={alreadyRegistered} setIsModalOpen={setAlreadyRegistered} phone={selectedPhoneNumber} />
     </>
   );
 };
 
 export default SignupPage;
+
+
+const AlreadyRegistered = ({  isModalOpen, setIsModalOpen, phone }) => {
+  const closeModal = () => setIsModalOpen(false);
+  const navigate = useNavigate();
+
+  return (
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
+      {isModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            top: "0",
+            left: "0",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "40px 30px",
+              borderRadius: "10px",
+              boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+              textAlign: "center",
+              width: "95%",
+            }}
+          >
+            <h5
+              style={{ color: "#000000", fontSize: "20px", fontWeight: "bold" }}
+            >" Already registered"
+              
+            </h5>
+            <IoIosCloseCircle
+              color={"#2A0181"}
+              size={30}
+              onClick={closeModal}
+              style={{
+                position: "absolute",
+                right: 15,
+                cursor: "pointer",
+                marginTop: -70,
+              }}
+            />
+            <p>"You have already registered with the mobile number “{phone}” Please Add the tagis shorcut "</p>
+
+            <button style={{
+              backgroundColor: "#2A0181",
+              color: "white",
+              borderRadius: "50px",
+              width: "190px",
+              height: "40px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }} onClick={() => navigate("/")}>
+              Login
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

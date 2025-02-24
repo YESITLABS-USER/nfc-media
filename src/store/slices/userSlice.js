@@ -29,6 +29,14 @@ export const signIn = createAsyncThunk("user/signIn", async (formData, { rejectW
     return rejectWithValue(error.response?.data || error.message);
   }
 });
+export const logout = createAsyncThunk("user/logout", async (_, { rejectWithValue }) => {
+  try {
+    const response = await api.logout();
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || error.message);
+  }
+});
 
 export const verifyOtp = createAsyncThunk("user/verifyOtp", async (formData, { rejectWithValue }) => {
   try {
@@ -42,6 +50,24 @@ export const verifyOtp = createAsyncThunk("user/verifyOtp", async (formData, { r
 export const resendOtp = createAsyncThunk("user/resendOtp", async (formData, { rejectWithValue }) => {
   try {
     const response = await api.resendOtp(formData);
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || error.message);
+  }
+});
+
+export const getUser = createAsyncThunk("user/getUser", async (formData, { rejectWithValue }) => {
+  try {
+    const response = await api.getUser(formData);
+    return response.data;
+  } catch (error) {
+    return rejectWithValue(error.response?.data || error.message);
+  }
+});
+
+export const updateUser = createAsyncThunk("user/updateUser", async (formData, { rejectWithValue }) => {
+  try {
+    const response = await api.updateUser(formData);
     return response.data;
   } catch (error) {
     return rejectWithValue(error.response?.data || error.message);
@@ -103,11 +129,32 @@ const userSlice = createSlice({
         state.error = errorPayload;
         if (errorPayload.errors) {
           const errorMessages = Object.values(errorPayload.errors).flat().join(", ");
-          toast.error(errorMessages || "Failed to send OTP");
+          toast.error(errorMessages ?? action.payload?.message ?? "Failed to send OTP");
         } else {
-          toast.error(errorPayload.error?.[0] || "Failed to send OTP");
+          toast.error(errorPayload.error?.[0] ?? action.payload?.message ?? "Failed to send OTP");
         }
-    })
+      })
+
+      .addCase(logout.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logout.fulfilled, (state, action) => {
+        state.loading = false;
+        toast.success(action.payload?.message || "Logout successfully")
+        localStorage.removeItem("nfc-app");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1000);
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.loading = false;
+        toast.error(action.payload?.message || "Unauthenticated User");
+        localStorage.removeItem("nfc-app");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1000);
+      })
     
       // Verify OTP
       .addCase(verifyOtp.pending, (state) => {
@@ -119,7 +166,7 @@ const userSlice = createSlice({
         state.loading = false;
         state.otpError = null;
         localStorage.setItem("nfc-app", JSON.stringify({
-          user_id: action.payload?.user?.user_id,
+          user_id: action.payload?.user?.id,
           token: action.payload?.token
         }));
         toast.success(action.payload?.message || "Otp verified successfully")
@@ -148,6 +195,35 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.error || "Wrong OTP";
         toast.error(action.payload?.message || "Failed to resend otp")
+      })
+
+      .addCase(getUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userData = action.payload?.data;
+      })
+      .addCase(getUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error;
+        toast.error(action.payload?.message || "Failed to get account");
+      })
+
+      .addCase(updateUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.userData = action.payload?.data;
+        toast.success(action.payload?.message || "User updated successfully");
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.error;
+        toast.error(action.payload?.message || "Failed to Update User");
       })
 
       .addCase(deleteUser.pending, (state) => {

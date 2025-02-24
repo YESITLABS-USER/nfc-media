@@ -57,7 +57,13 @@ export const resendOtp = (formData) => API.post(`/api/v1/resend-otp`, formData, 
   },
 });
 
-export const editUser = (formData) => API.post(`/api/v1/edit-user`, formData, { 
+export const getUser = (formData) => API.post(`/api/v1/my-profile-get`, formData, { 
+  headers: {
+    'Authorization': `Bearer ${JSON.parse(localStorage.getItem("nfc-app"))?.token}`,
+    'lang': localStorage.getItem("language") || "eng",
+  },
+});
+export const updateUser = (formData) => API.post(`/api/v1/my-profile-update`, formData, { 
   headers: {
     'Authorization': `Bearer ${JSON.parse(localStorage.getItem("nfc-app"))?.token}`,
     'lang': localStorage.getItem("language") || "eng",

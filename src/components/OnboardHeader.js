@@ -18,17 +18,28 @@ import { FaInfoCircle } from "react-icons/fa";
 import SlidingPage from "./SlidingPage";
 import OnboaringInfo from "./OnboadingInfo";
 import { useNavigate } from "react-router-dom";
+import { getUser } from "../store/slices/userSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 // function OnboardHeader({ disabled, OLODISABLE, selectAvatar, bgrIcon = false, message, }) {
 function OnboardHeader({ disabled, OLODISABLE, selectAvatar, message, }) {
   const [showPage, setShowPage] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const activeUser = localStorage.getItem('nfc-app');
+  const dispatch = useDispatch();
+  const { userData } = useSelector((state) => state.user);
 
+  const activeUser = localStorage.getItem('nfc-app');
+  const {user_id} = JSON.parse(activeUser);
+  
+  useEffect(() => {
+    if(user_id) {
+      dispatch(getUser({"id" : user_id}));
+    }
+  },[dispatch, user_id])
 
   const navigate = useNavigate();
-  const profileMapping = { male: Man, female: Girl, transgender: Other, };
+  const profileMapping = { 0: Man, 1: Girl, 2: Other, };
 
   // For Language selection
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
@@ -166,13 +177,15 @@ function OnboardHeader({ disabled, OLODISABLE, selectAvatar, message, }) {
             >
               {/* <img src={Profile} alt="OLO" style={style.oloimg} /> */}
               <img
-                src={selectAvatar ? profileMapping[selectAvatar] : Man}
+                src={profileMapping[selectAvatar] || Man}
                 alt="OLO"
                 style={style.oloimg}
               />
-              <div>
+              <div style={{ fontSize:"16px", fontFamily:"Montserrat", fontWeight:"500"}}>
                 <span style={{ color: "white", display: "block" }}>
-                  Martin <br /> James
+                  {userData?.first_name ?? userData?.user_name ?? "user"}
+                  <br /> 
+                  {userData?.last_name?.slice(0,7) ?? ""}
                 </span>
                 {/* <span style={{ color: "white", display: "block" }}>James</span> */}
               </div>
@@ -269,7 +282,7 @@ const style = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "0 4%",
+    padding: "0 1%",
   },
   imgTrnstor: {
     height: 30,
